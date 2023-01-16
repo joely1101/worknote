@@ -1,0 +1,46 @@
+if [ "$HAVE_ASTERISK" = "1" ];then
+    echo "setup asterisk for test ...."
+    #enable chan_sip
+    sed -i  's/^noload => chan_sip.so/;noload => chan_sip.so/g' /etc/asterisk/modules.conf
+    sed -i  's/^;autocreatepeer=no/autocreatepeer=yes/g' /etc/asterisk/sip.conf
+    sed -i  's/^;directmedia=yes/directmedia=no/g' /etc/asterisk/sip.conf
+    
+cat >/etc/asterisk/extensions.conf<<EOF
+[public]
+;register first
+exten => _X.,1,Dial(SIP/\${EXTEN})
+;if use sipp to test use no timeout
+;prinet
+;exten => _X.,n,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1025)
+;pri client
+;exten => _X.,n,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1026)
+
+;pri net normal test
+exten => _X.,n,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1025,6)
+;pri client
+exten => _X.,n,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1026,6)
+
+exten => _X.,n,Answer()
+exten => _X.,n,SayDigits(\${EXTEN})
+exten => _X.,n,Playback(number-not-answering)
+exten => _X.,n,Hangup()
+
+;pri agent, if ewua timeout then dial sipgw
+;exten => _6XX,1,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1025,6)
+;exten => _6XX,n,Dial(SIP/\${EXTEN}@${T1_PRI_SIP_IP}:1026,6)
+;exten => _6XX,n,Answer()
+;exten => _6XX,n,SayDigits(\${EXTEN})
+;exten => _6XX,n,Playback(number-not-answering)
+;exten => _6XX,n,Hangup()
+
+exten => 123,1,Answer()
+exten => 123,n,Wait(1)
+exten => 123,n,Playback(hello)
+exten => 123,n,Playback(queue-thereare)
+exten => 123,n,SayDigits(\${CALLERID(num)})
+exten => 123,n,Playback(goodbye)
+exten => 123,n,Hangup()
+
+EOF
+asterisk 
+fi
