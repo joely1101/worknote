@@ -1,0 +1,25 @@
+Linux software bridge vlan tagged/untagged actions.
+
+ip link add br10 up type bridge vlan_filtering 1
+ip link set ge5 master br10
+ip link set ge6 master br10
+#set br10 join vid 100
+bridge vlan add vid 100 dev br10 self
+#bridge vlan add vid 100 pvid untagged dev br10 self ==> untagged
+#set ge5 join vid 100 and taged
+bridge vlan add vid 100 pvid tagged dev ge5 master
+#set ge6 join vid 100 and taged
+bridge vlan add vid 100 pvid untagged dev ge6 master
+#br10 vlan interface
+ip link add link br10 name br10.100 up type vlan id 100
+#setup ip
+ifconfig br10.100 10.1.1.1/24 up
+#PC1 connect ge5(will have vlan id 100 in packet)
+ip link add link eth0 name eth0.100 up type vlan id 100
+ifconfig  eth0.100 10.1.1.11/24 up
+ping 10.1.1.1 and 10.1.1.22
+#PC2 connect ge6(untagged)
+ifconfig eth0 10.1.1.22/24 up
+ping 10.1.1.1 and 10.1.1.11
+#note
+bridge vlan add vid 100 pvid tagged dev ge5 master ==> pvid is mean this rule is default vlan id, if ingress packet without vlanid, will set to this.
