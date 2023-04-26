@@ -1,0 +1,7 @@
+apt-get      install     ser2net
+cat >/etc/ser2net.conf<<EOF
+2001:telnet:600:/dev/ttyS1:115200 8DATABITS NONE 1STOPBIT -RTSCTS -XONXOFF LOCALL banner
+EOF
+systemctl stop ser2net
+systemctl start ser2net
+telnet IP 2001
