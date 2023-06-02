@@ -1,0 +1,22 @@
+https://logic.edchen.org/how-to-list-dependencies-and-dependents-of-a-package-on-linux/
+yum deplist pkgname
+
+#download pkg and depend pkg
+yum install --downloadonly --downloaddir=$PWD/a openssl
+#download pkg
+yum download openssl
+
+yum install yum-utils #for repoquery
+#list all packages that depend openssl
+repoquery --whatrequires  openssl
+#list dependcy by pkg name
+repoquery --requires --resolve openssl
+repoquery --requires --resolve --installed openssl
+Note: repoquery == yum deplist
+ex: yum deplist --requires --resolve openssl
+
+#list dependcy by file/lib name
+repoquery --requires  openssl
+
+#extract rpm
+rpm2cpio ./openssl-1.1.1k-9.el8_6.rpm | cpio -idmv
