@@ -12,3 +12,12 @@ $NF : last field/number of fields
 
 #show ip / interface
 ip -details -j l | jq -r '.[]|"@", .ifname, .link_type, .linkinfo.info_data.type, .linkinfo.info_kind, .linkinfo.info_slave_kind, .master'  | tr '\n' ' ' | tr '@' '\n' ; echo  | column -t
+
+show bridge and member like brctl show
+for i in /sys/class/net/*;do
+       if [ -d $i/brif ];then
+                echo "$(basename $i)"
+                ls $i/brif | xargs -i echo " |- {}"
+                echo ""
+        fi
+done
