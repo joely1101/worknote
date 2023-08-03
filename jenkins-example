@@ -1,0 +1,104 @@
+pipeline {
+    agent {
+        kubernetes {
+        	cloud "xxxxxxx"
+        	// cloud "ott-ocp1"
+        	label "ucpe-${JOB_BASE_NAME}-${BUILD_NUMBER}"
+        	defaultContainer 'xxxxxx'
+        	yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                volumes:
+                - name: docker-volume
+                  emptyDir: {}
+                containers:
+                - name: xxxxx
+                  image: xxxxxxx
+                  resources:
+                    requests:
+                      memory: "100M"
+                      cpu:  1m
+                    limits:
+                      memory: "1Gi"
+                      cpu:  1
+            """.stripIndent()
+        }
+    }
+    environment {
+        XXX="xxxxxxxx"
+    }
+    stages {
+        stage('clone-code') {
+            steps {
+                dir('./') {
+                    git credentialsId: "$SSH_CREDENTIAL_ID", url: "ssh://git@xx.xx.xx.xx/code"
+                    sh 'git checkout branchexxxx'
+                    sh 'pwd;ls -al'
+                }
+                script {
+                    if (fileExists('filexxxxx')) {
+                        env.BUILD_source="no"
+                    }else{
+                        env.BUILD_source="yes"
+                    }
+                }
+            }
+        }
+        stage('build-submodule') {
+                when { expression { env.BUILD_source == 'yes'} }
+            steps {
+                    withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIAL_ID}", keyFileVariable: 'SSH_KEY')]) {
+                       sh 'GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i $SSH_KEY" git submodule update --init --depth 1 -- $submod_path'
+                       
+                    }
+
+                    container('xxxxx') {
+                    sh """#!/bin/bash
+                        exec > >(tee logs/xxxxx_log.txt) 2>&1 
+                        cd $submod_path
+                        make all
+                        cd -
+                    """
+                    }
+                }
+        }
+
+        stage('artifactory-download-upload') {
+            steps {
+                    rtServer (
+                        id: "Artifactory",
+                        url: "${ARTTF_URL}",
+                        credentialsId: "${ARTTF_CREDENTIAL_ID}",
+                        timeout: 300
+                    )
+                    rtDownload (
+                        serverId: "Artifactory",
+                        failNoOp: true,
+                        spec:
+                        """{
+                            "files": [
+                                {
+                                    "pattern": "ARTIFACTORY_url/path/to/file",
+                                    "target": "${WORKSPACE}/"
+                                }
+                            ]
+                        }"""
+                    )
+                    rtUpload (
+                        serverId: "Artifactory",
+                        failNoOp: true,
+                        spec:
+                        """{
+                            "files": [
+                                {
+                                    "pattern": "${WORKSPACE}/file.*",
+                                    "target": "ARTIFACTORY_url/path/to/file",
+                                }
+                            ]
+                        }"""
+                    )
+            }
+        }
+    }
+}
